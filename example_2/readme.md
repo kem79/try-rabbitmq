@@ -13,7 +13,7 @@ of messages sent by all the producers.
 The purpose is, once again, to verify that all messages sent by producers are 
 successfully received by the consumer, i.e. no message loss.
 
-You may have noticed that the rabbitmq client is created in the global space without any consideration for 
+You may have noticed that the rabbitmq client is created in the global scope without any consideration for 
 thread safety: 2 threads can potentially grab the connection at the same time to send a message, 
 with unpredictable outcome... let's verify this in the first experiment.
 
@@ -23,18 +23,14 @@ with unpredictable outcome... let's verify this in the first experiment.
 2) Run producer_2.py with 10 producers and 1000 messages (in init file), you should witness exceptions in the trace. if not,
  increase these values:
 ```
+...
 2019-10-22 17:15:04,419 [INFO] publishing...{"value": 634} C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py 111 67c0b7a8-f4ac-11e9-97d1-8c04ba69e459 default 18800
 2019-10-22 17:15:04,419 [INFO] publishing...{"value": 630} C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py 111 67c0b7a9-f4ac-11e9-9700-8c04ba69e459 default 18800
 2019-10-22 17:15:04,433 [ERROR] AMQPError occurs, retry connection with exchange=tasks C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py 121 67c0dc94-f4ac-11e9-92d1-8c04ba69e459 default 18800
 Traceback (most recent call last):
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
     headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-    mandatory, immediate)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2164, in publish
-    self._flush_output()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 1250, in _flush_output
-    *waiters)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 474, in _flush_output
     result.reason_text)
 pika.exceptions.ConnectionClosed: (505, 'UNEXPECTED_FRAME - expected method frame, got non method frame instead')
@@ -49,45 +45,7 @@ During handling of the above exception, another exception occurred:
 Traceback (most recent call last):
   File "C:\Users\marecm\AppData\Local\Programs\Python\Python35\lib\threading.py", line 914, in _bootstrap_inner
     self.run()
-  File "C:\Users\marecm\AppData\Local\Programs\Python\Python35\lib\threading.py", line 862, in run
-    self._target(*self._args, **self._kwargs)
-  File "C:/Users/marecm/PycharmProjects/try-ace-rabbitmq/example_2/producer_2.py", line 17, in publish
-    message=json.dumps({'value': i}))
-  File "<C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\decorator.py:decorator-gen-6>", line 2, in publish2
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\retry\api.py", line 74, in retry_decorator
-    logger)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\retry\api.py", line 33, in __retry_internal
-    return f()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\traceable_logger.py", line 57, in __decorated_func_with_self
-    return func(self, *args, **kwargs)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
-    headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-    mandatory, immediate)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2164, in publish
-    self._flush_output()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 1250, in _flush_output
-    *waiters)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 455, in _flush_output
-    self._impl.ioloop.poll()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\select_connection.py", line 245, in poll
-    self._poller.poll()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\select_connection.py", line 718, in poll
-    self._dispatch_fd_events(fd_event_map)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\select_connection.py", line 625, in _dispatch_fd_events
-    handler(fileno, events)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\base_connection.py", line 395, in _handle_events
-    self._handle_read()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\base_connection.py", line 440, in _handle_read
-    return self._handle_error(error)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\base_connection.py", line 368, in _handle_error
-    repr(error_value))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\connection.py", line 1974, in _on_terminate
-    self._adapter_disconnect()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\select_connection.py", line 110, in _adapter_disconnect
-    self.ioloop.remove_handler(self.socket.fileno())
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\select_connection.py", line 202, in remove_handler
-    self._poller.remove_handler(fileno)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\select_connection.py", line 415, in remove_handler
     del self._fd_handlers[fileno]
 KeyError: 288
@@ -97,10 +55,7 @@ KeyError: 288
 Traceback (most recent call last):
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
     headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-    mandatory, immediate)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2163, in publish
-    immediate=immediate)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\channel.py", line 415, in basic_publish
     raise exceptions.ChannelClosed()
 pika.exceptions.ChannelClosed
@@ -109,10 +64,7 @@ pika.exceptions.ChannelClosed
 Traceback (most recent call last):
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
     headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-    mandatory, immediate)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2163, in publish
-    immediate=immediate)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\channel.py", line 415, in basic_publish
     raise exceptions.ChannelClosed()
 pika.exceptions.ChannelClosed
@@ -121,10 +73,7 @@ pika.exceptions.ChannelClosed
 Traceback (most recent call last):
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
     headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-    mandatory, immediate)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2163, in publish
-    immediate=immediate)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\channel.py", line 415, in basic_publish
     raise exceptions.ChannelClosed()
 pika.exceptions.ChannelClosed
@@ -133,23 +82,7 @@ Exception in thread Thread-3:
 Traceback (most recent call last):
   File "C:\Users\marecm\AppData\Local\Programs\Python\Python35\lib\threading.py", line 914, in _bootstrap_inner
     self.run()
-  File "C:\Users\marecm\AppData\Local\Programs\Python\Python35\lib\threading.py", line 862, in run
-    self._target(*self._args, **self._kwargs)
-  File "C:/Users/marecm/PycharmProjects/try-ace-rabbitmq/example_2/producer_2.py", line 17, in publish
-    message=json.dumps({'value': i}))
-  File "<C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\decorator.py:decorator-gen-6>", line 2, in publish2
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\retry\api.py", line 74, in retry_decorator
-    logger)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\retry\api.py", line 33, in __retry_internal
-    return f()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\traceable_logger.py", line 57, in __decorated_func_with_self
-    return func(self, *args, **kwargs)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
-    headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-    mandatory, immediate)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2163, in publish
-    immediate=immediate)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\channel.py", line 415, in basic_publish
     raise exceptions.ChannelClosed()
 pika.exceptions.ChannelClosed
@@ -158,10 +91,7 @@ pika.exceptions.ChannelClosed
 Traceback (most recent call last):
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
     headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-    mandatory, immediate)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2163, in publish
-    immediate=immediate)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\channel.py", line 415, in basic_publish
     raise exceptions.ChannelClosed()
 pika.exceptions.ChannelClosed
@@ -169,28 +99,7 @@ Exception in thread Thread-1:
 Traceback (most recent call last):
   File "C:\Users\marecm\AppData\Local\Programs\Python\Python35\lib\threading.py", line 914, in _bootstrap_inner
     self.run()
-  File "C:\Users\marecm\AppData\Local\Programs\Python\Python35\lib\threading.py", line 862, in run
-    self._target(*self._args, **self._kwargs)
-  File "C:/Users/marecm/PycharmProjects/try-ace-rabbitmq/example_2/producer_2.py", line 17, in publish
-    message=json.dumps({'value': i}))
-  File "<C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\decorator.py:decorator-gen-6>", line 2, in publish2
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\retry\api.py", line 74, in retry_decorator
-    logger)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\retry\api.py", line 33, in __retry_internal
-    return f()
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\traceable_logger.py", line 57, in __decorated_func_with_self
-    return func(self, *args, **kwargs)
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
-    headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2077, in basic_publish
-2019-10-22 17:15:10,811 [INFO] publishing...{"value": 635} C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py 111 67c0b7a8-f4ac-11e9-97d1-8c04ba69e459 default 18800
-    mandatory, immediate)
-2019-10-22 17:15:10,815 [ERROR] AMQPError occurs, retry connection with exchange=tasks C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py 121 67c0b7a8-f4ac-11e9-97d1-8c04ba69e459 default 18800
-Traceback (most recent call last):
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\common\ace_rabbitmq.py", line 118, in publish2
-    headers={'x-trace-id': trace_id}))
-  File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\adapters\blocking_connection.py", line 2163, in publish
-    immediate=immediate)
+  ...
   File "C:\Users\marecm\PycharmProjects\try-ace-rabbitmq\venv\lib\site-packages\pika\channel.py", line 415, in basic_publish
     raise exceptions.ChannelClosed()
 pika.exceptions.ChannelClosed
@@ -214,8 +123,8 @@ We can see that all 3 threads eventually run into AMQPError which is handled by 
  is not the same as the count of message sent by the producers.
  
 ## Conclusion
-We should never share a connection from the global scope with a pool of threads without any thread safety mechanism. 
-Generally speaking, this experiment also demonstrate that we should never share a object from the global scope with 
+We should never share a rabbitmq connection from the global scope with a pool of threads without any thread safety mechanism. 
+Generally speaking, this experiment also demonstrates that we should never share a object from the global scope with 
 a pool of thread, except if the share object is certified thread safe.
 
 When replacing multi-threading with multi-processing in the main of producer_2.py, there is no exception anymore:
@@ -229,13 +138,12 @@ To Fix the concurrency issue, the most simple way is to use a lock to secure the
 shows how to do that.
 
 Start the consumer.py. Start the producer_2_1.py. The consumer assert the right count of message.
- You should witness no exception. The lock prevents concurrent access to the rmq client, at a performance cost of
-  course: threads now have to wait for the critical part of code to be accessible. 
-  
+You should witness no exception. The lock prevents concurrent access to the rmq client, at a performance: 
+threads now have to wait for the critical part of code to be accessible. 
+
 It would be interesting to check the result of creating one channel per thread on 1 single channel.
 
-
-let's switch to another topic now that we know how to handle connections, this is the topic of publisher
+Let's switch to another topic now that we know how to handle connections, this is the topic of publisher
 message delivery confirm.
 
 # Example 2: Producer message delivery
@@ -243,25 +151,30 @@ message delivery confirm.
 ## Test Introduction
 Producer "delivery confirm" ensures that the broker acknowledges messages sent by the producer. This
 is necessary to ensure that all messages sent by producers reach the broker and are not lost on the way.
-let's have a look at the effect of this parameter.
+Let's have a look at the effect of this parameter.
 
 producer_2_2.py is similar to the producer you already met in the past examples, except that the channel is configured
- to confirm producer message delivery.
+ to confirm producer message delivery. in the publish3() method:
  ```
-channel.confirm_delivery()
+connection = pika.BlockingConnection(pika.URLParameters(self.uri))
+trace_id = get_trace_id()
+
+channel = connection.channel()
+channel.confirm_delivery()  # delivery confirm enabled
+channel.exchange_declare(exchange=exchange, durable=True)
 ```
 
 ## Test Protocol
-### without delivery confirm
-in the publish3() methods in ace_rabbitmq.py, ensure that the line which confirms delivery is commented:
+### Without delivery confirm
+In the publish3() methods in ace_rabbitmq.py, ensure that the line which confirms delivery is commented:
 ```
 # channel.confirm_delivery()
 ```
-run producer_2_2.py and stop/start the rabbitmq broker of your vagrant project. Without delivery confirm,
+Run producer_2_2.py and stop/start the rabbitmq broker of your vagrant project. Without delivery confirm,
 the broker will receive less messages then expected.
 
-1) in the init file, set 10 producers and 300 messages. The broker expects to get 3001 messages (3000 + 1 death pill)
-2) ssh into the vagrant box and stop/start the broker. stopping the broker should eventually drop some messages.
+1) In the init file, set 10 producers and 300 messages. The broker expects to get 3001 messages (3000 + 1 death pill)
+2) ssh into the vagrant box and stop/start the broker. Stopping the broker should eventually drop some messages.
 ```
 vagrant ssh
 sudo docker stop rabbtimq
@@ -272,12 +185,12 @@ sudo docker start rabbitmq
 http://192.168.99.100/15672
 ```
 You should witness that the number of messages in the "tasks" queue is largely less then 3001. When i run the 
-experiement, I stopped the broker once and i witnessed that there were only 2160 message in the broker, far less then
+experiment, I stopped the broker once and i witnessed that there were only 2160 message in the broker, far less then
  3001.
  
 Let's see if enabling delivery confirm improve something.
 
-### with delivery confirm
+### With delivery confirm
 1) Purge the queue in the rabbitmq management console (around the bottom of the page).
 ```
 http://192.168.99.100/15672

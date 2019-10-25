@@ -28,20 +28,31 @@ class RabbitmqService(object):
     # max retries
     retries = 3
 
-    def __init__(self, uri, exchange=None):
+    def __init__(self, uri, exchange=None, queue=None, routing_key=None):
         self.uri = uri
         self.connection = pika.BlockingConnection(pika.URLParameters(self.uri))
         self.channel = self.connection.channel()
-        self.exchange = exchange
         if exchange:
+            self.exchange = exchange
             self.channel.exchange_declare(exchange=exchange, durable=True)
+            self.channel.confirm_delivery()
+        if routing_key:
+            self.routing_key = routing_key
+        if queue:
+            self.queue = queue
+            self.channel.queue_declare(self.queue, durable=True)
+            self.channel.queue_bind(self.queue, self.exchange, self.routing_key)
 
-
-    '''
-    Consume will retry infinitely if connection failed. Use tries default value -1.
-    '''
     @retry(exceptions=pika.exceptions.AMQPError, max_delay=max_delay, delay=delay, jitter=jitter)
-    def consume(self, callback, exchange, queue, routing_key):
+    def consume(self, callback, exchange, queue, routing_key, prefetch_count=0):
+        """
+        This is the original method from the railai-common package
+        :param callback:
+        :param exchange:
+        :param queue:
+        :param routing_key:
+        :return:
+        """
         try:
             if exchange is None or queue is None:
                 logger.error(EXCHANGE_QUEUE_ERR_MSG)
@@ -49,16 +60,44 @@ class RabbitmqService(object):
             logger.info("Building consume connection exchange={}, queue={}".format(exchange, queue))
             connection = pika.BlockingConnection(pika.URLParameters(self.uri))
             channel = connection.channel()
+            # for rate limiting
+            if prefetch_count != 0:
+                channel.basic_qos(prefetch_count=prefetch_count)
             channel.exchange_declare(exchange=exchange, durable=True)
             channel.queue_declare(queue, durable=True)
             channel.queue_bind(exchange=exchange,
                                routing_key=routing_key,
                                queue=queue)
-            channel.basic_consume(callback, queue=queue, no_ack=True)
+            # if already set rate limiting, ack is required
+            if prefetch_count != 0:
+                channel.basic_consume(callback, queue=queue, no_ack=False)
+            else:
+                channel.basic_consume(callback, queue=queue, no_ack=True)
             logger.info("Start consuming")
             channel.start_consuming()
         except pika.exceptions.AMQPError:
             logger.exception(CONNECTION_ERR_MSG.format(exchange))
+            # Trigger retry
+            raise
+
+    @retry(exceptions=pika.exceptions.AMQPError, max_delay=max_delay, delay=delay, jitter=jitter)
+    def consume_with_ack(self, callback):
+        """
+        This is the original method from the railai-common package
+        :param callback:
+        :param exchange:
+        :param queue:
+        :param routing_key:
+        :return:
+        """
+        try:
+            self.connection = pika.BlockingConnection(pika.URLParameters(self.uri))
+            self.channel = self.connection.channel()
+            self.channel.basic_consume(callback, queue=self.queue, no_ack=False)
+            logger.info("Start consuming")
+            self.channel.start_consuming()
+        except pika.exceptions.AMQPError:
+            logger.exception(CONNECTION_ERR_MSG.format(self.exchange))
             # Trigger retry
             raise
 
@@ -176,3 +215,22 @@ class RabbitmqService(object):
             logger.exception(CONNECTION_ERR_MSG.format(exchange))
             # Trigger retry
             raise
+
+    @with_trace_id
+    def publish_fast(self, routing_key, message, app_id=None, expiration=None):
+        """
+        fastest implementation, no logging information
+        :param routing_key:
+        :param message:
+        :param app_id:
+        :param expiration:
+        :return:
+        """
+        trace_id = get_trace_id()
+        self.channel.basic_publish(exchange=self.exchange,
+                                   routing_key=routing_key,
+                                   body=message,
+                                   properties=pika.BasicProperties(delivery_mode=2,
+                                                                   app_id=app_id,
+                                                                   expiration=expiration,
+                                                                   headers={'x-trace-id': trace_id}))

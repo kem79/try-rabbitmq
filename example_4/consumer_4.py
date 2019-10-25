@@ -1,9 +1,10 @@
 import json
 import sys
+from time import sleep
 
 from common.ace_rabbitmq import RabbitmqService
 from common.traceable_logger import TraceableLogger
-from example_2 import producer_count, message_count_per_producer
+from example_4 import producer_count, message_count_per_producer
 
 logger = TraceableLogger(__name__)
 exchange = 'tasks'
@@ -19,11 +20,14 @@ if __name__ == '__main__':
 
     received_values = []
 
-    def callback(channel, method, properties, body):
+    def callback(channel, method_frame, head_frame, body):
         val = json.loads(body.decode('utf-8'))['value']
+        logger.info('Value: {} ; Delivery tag: {}'.format(val,
+                                                          method_frame.delivery_tag))
         if val == 'end':
             raise SystemExit()
         received_values.append(val)
+        sleep(0.025)
 
     while True:
         i = 0
@@ -31,15 +35,18 @@ if __name__ == '__main__':
             rmq.consume(callback=callback,
                         exchange=exchange,
                         queue=queue,
-                        routing_key=routing_key
-                        )
+                        routing_key=routing_key,
+                        prefetch_count=0)
             i += 1
             print('{}\r'.format(i))
         except SystemExit:
+            # assert the count of received messages
             print('Interrupt')
             expected_count_of_received_messages = producer_count * message_count_per_producer
-            assert len(received_values) >= expected_count_of_received_messages, \
-                'Received {} messages. Not {}.'.format(len(received_values), expected_count_of_received_messages)
+            if len(received_values) != expected_count_of_received_messages:
+                logger.error('Received {} messages. Not {}.'.format(len(received_values), expected_count_of_received_messages))
+            else:
+                logger.info('Received {} messages'.format(len(received_values)))
             sys.exit(0)
 
 
