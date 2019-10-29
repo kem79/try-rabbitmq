@@ -22,6 +22,12 @@ using message delivery to ensure all message produced by producer reach the brok
 - example_3 is a performance benchmark. You can run the module to show the performance impact of 
 creating a connection in every publish() call, and the impact of logging message.
 
+- example_4 shows the impact of acknowledging or not messaging in the consumer callback method.
+
+- example 5 benchmark the consumer to show the impact of the Quality of Service (QoS)
+
+- example_6 is an attempt at scaling consumer by using 2 channels on top of one single connection.
+
 # Pre-requisite
 Ensure that your rabbitmq broker is running in you vagrant box. if so, you should be able
 to access the management console:
