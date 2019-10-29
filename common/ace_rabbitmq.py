@@ -28,10 +28,11 @@ class RabbitmqService(object):
     # max retries
     retries = 3
 
-    def __init__(self, uri, exchange=None, queue=None, routing_key=None):
+    def __init__(self, uri, exchange=None, queue=None, routing_key=None, qos=None, global_qos=False):
         self.uri = uri
         self.connection = pika.BlockingConnection(pika.URLParameters(self.uri))
         self.channel = self.connection.channel()
+        self.channel.basic_qos(prefetch_count=qos, all_channels=global_qos)
         if exchange:
             self.exchange = exchange
             self.channel.exchange_declare(exchange=exchange, durable=True)
@@ -80,7 +81,7 @@ class RabbitmqService(object):
             # Trigger retry
             raise
 
-    @retry(exceptions=pika.exceptions.AMQPError, max_delay=max_delay, delay=delay, jitter=jitter)
+    # @retry(exceptions=pika.exceptions.AMQPError, max_delay=max_delay, delay=delay, jitter=jitter)
     def consume_with_ack(self, callback):
         """
         This is the original method from the railai-common package
@@ -91,8 +92,6 @@ class RabbitmqService(object):
         :return:
         """
         try:
-            self.connection = pika.BlockingConnection(pika.URLParameters(self.uri))
-            self.channel = self.connection.channel()
             self.channel.basic_consume(callback, queue=self.queue, no_ack=False)
             logger.info("Start consuming")
             self.channel.start_consuming()
