@@ -1,10 +1,9 @@
 # Consumer Reliability
-
 In the past examples, we focused on producer reliability, let's now focus on consumer reliability.
 The consume() method tested in the next examples is the same as the method of railai-common.
 
 As usual, the purpose of the experiments is to understand how ACE custom rabbitmq consume() method behaves in 
-particular scenario, and to answer the question: "Do we loose messages?".
+particular scenario, and to answer the question: "Do we lose messages?".
 
 # Experiment 1: Consumer reliability without message acknowledgement.
 producer_4.py contains one producer which publish 20000 messages on one channel with delivery confirm enable.

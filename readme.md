@@ -28,6 +28,12 @@ creating a connection in every publish() call, and the impact of logging message
 
 - example_6 is an attempt at scaling consumer by using 2 channels on top of one single connection.
 
+- example_7 test the asynchronous consumer implementation and the effect of using thread pool to run
+task asynchronously.
+
+- example_8 suggest an implementation of a reliable and fast producer and consumer, based on the experience we 
+have acquired through the past examples.
+
 # Pre-requisite
 Ensure that your rabbitmq broker is running in you vagrant box. if so, you should be able
 to access the management console:

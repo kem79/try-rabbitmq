@@ -1,7 +1,6 @@
 # multi-channel
 LEt's see if we can scale consumer. let's build a test with 2 consumers, each with its own channel of top of 
-one connection.
-
+one blocking connection.
 
 # Experiment 1: 2 consumers on one channel with channel wide QoS
 i tried using 2 channels on top of one blocking connection, but it does not work.
@@ -23,8 +22,9 @@ pika.exceptions.RecursionError: start_consuming may not be called from the scope
 
 ## Conclusion
 It is not possible to create 2 consumers with one blocking connection to scale up message consumer.
-The only way to work with blocking connection is to create 1 connection and 1 dedicated per consumer thread/process.
+The only way to work with blocking connection is to create 1 connection and 1 channel per consumer thread/process.
 
-The best option to scale consumer is to use a thread pool to delegate tasks in the callback() method.
+The best option to scale consumer is to use a thread pool to delegate tasks in the callback() method. This is the topic
+of example_7
 
 
